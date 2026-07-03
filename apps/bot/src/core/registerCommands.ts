@@ -11,8 +11,15 @@ async function main() {
   const features = await loadFeatures(featuresDir);
   const body = features.flatMap((f) => (f.commands ?? []).map((c) => c.data.toJSON()));
   const rest = new REST({ version: '10' }).setToken(config.token);
-  console.log(`Registering ${body.length} global slash commands...`);
-  await rest.put(Routes.applicationCommands(config.clientId), { body });
+
+  const guildId = process.env.GUILD_ID?.trim();
+  if (guildId) {
+    console.log(`Registering ${body.length} slash commands to guild ${guildId} (instant sync)...`);
+    await rest.put(Routes.applicationGuildCommands(config.clientId, guildId), { body });
+  } else {
+    console.log(`Registering ${body.length} global slash commands (may take 1-60 min to sync)...`);
+    await rest.put(Routes.applicationCommands(config.clientId), { body });
+  }
   console.log('Done.');
 }
 
