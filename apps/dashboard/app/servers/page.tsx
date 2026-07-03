@@ -35,7 +35,7 @@ export default async function ServersPage() {
         {withBot.map((g) => (
           <Link
             key={g.id}
-            href={`/servers/${g.id}/welcome`}
+            href={`/servers/${g.id}`}
             className="flex items-center gap-3 p-3 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-800"
           >
             {guildIconUrl(g.id, g.icon) ? (

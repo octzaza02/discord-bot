@@ -1,9 +1,10 @@
 import { ChannelType, Events, type GuildMember } from 'discord.js';
-import { GuildConfig } from '@discord-bot/shared';
+import { GuildConfig, isFeatureEnabled } from '@discord-bot/shared';
 import type { EventHandler } from '../../core/types.js';
 import { renderTemplate } from './template.js';
 
 async function onMemberJoin(_client: unknown, member: GuildMember) {
+  if (!(await isFeatureEnabled(member.guild.id, 'welcome'))) return;
   const cfg = await GuildConfig.findOne({ guildId: member.guild.id });
   if (!cfg?.welcome?.enabled || !cfg.welcome.channelId) return;
   const channel = await member.guild.channels.fetch(cfg.welcome.channelId).catch(() => null);

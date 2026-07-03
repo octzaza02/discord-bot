@@ -20,8 +20,10 @@ export default async function GuildLayout({
         <Link href="/servers" className="block text-sm text-neutral-400 hover:text-neutral-200 mb-4">
           ← เซิร์ฟเวอร์ทั้งหมด
         </Link>
+        <NavLink href={`/servers/${params.guildId}`}>📊 ภาพรวม</NavLink>
         <NavLink href={`/servers/${params.guildId}/welcome`}>👋 Welcome message</NavLink>
         <NavLink href={`/servers/${params.guildId}/rolepanels`}>🎯 Role panels</NavLink>
+        <NavLink href={`/servers/${params.guildId}/leveling`}>⭐ Leveling</NavLink>
       </aside>
       <section>{children}</section>
     </div>

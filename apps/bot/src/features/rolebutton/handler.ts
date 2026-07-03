@@ -1,10 +1,18 @@
 import { Events, type Interaction, type GuildMember } from 'discord.js';
+import { isFeatureEnabled } from '@discord-bot/shared';
 import type { EventHandler } from '../../core/types.js';
 
 async function onInteraction(_client: unknown, interaction: Interaction) {
   if (!interaction.isButton()) return;
   if (!interaction.customId.startsWith('rolepanel:')) return;
   if (!interaction.inGuild() || !interaction.guild) return;
+
+  if (!(await isFeatureEnabled(interaction.guild.id, 'rolebutton'))) {
+    await interaction
+      .reply({ content: '⚠️ ระบบปุ่มรับยศถูกปิดโดย admin', ephemeral: true })
+      .catch(() => {});
+    return;
+  }
 
   const parts = interaction.customId.split(':');
   const roleId = parts[2];

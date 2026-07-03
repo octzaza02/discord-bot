@@ -1,9 +1,11 @@
 import { Events, type Guild } from 'discord.js';
+import { isFeatureEnabled } from '@discord-bot/shared';
 import { config } from '../../config.js';
 import type { EventHandler } from '../../core/types.js';
 
 async function onGuildJoin(_client: unknown, guild: Guild) {
   if (!config.dashboardUrl) return;
+  if (!(await isFeatureEnabled(guild.id, 'dashboardDm'))) return;
   const owner = await guild.fetchOwner().catch(() => null);
   if (!owner) return;
 
