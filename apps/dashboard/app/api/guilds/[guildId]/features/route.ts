@@ -3,7 +3,7 @@ import { authorizeGuild } from '../../../../../lib/authorize';
 import { ensureDb } from '../../../../../lib/db';
 import { getOrCreateGuildConfig } from '@discord-bot/shared';
 
-const VALID_FEATURES = ['welcome', 'rolebutton', 'leveling', 'dashboardDm'] as const;
+const VALID_FEATURES = ['welcome', 'rolebutton', 'leveling', 'poll', 'dashboardDm'] as const;
 type FeatureName = (typeof VALID_FEATURES)[number];
 
 export async function GET(_req: Request, { params }: { params: { guildId: string } }) {

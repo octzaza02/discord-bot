@@ -23,6 +23,7 @@ const FeaturesSchema = new Schema(
     welcome: { type: FeatureFlagSchema, default: () => ({ enabled: true }) },
     rolebutton: { type: FeatureFlagSchema, default: () => ({ enabled: true }) },
     leveling: { type: FeatureFlagSchema, default: () => ({ enabled: false }) },
+    poll: { type: FeatureFlagSchema, default: () => ({ enabled: true }) },
     dashboardDm: { type: FeatureFlagSchema, default: () => ({ enabled: true }) },
   },
   { _id: false },
@@ -108,6 +109,7 @@ export interface FeaturesConfig {
   welcome: { enabled: boolean };
   rolebutton: { enabled: boolean };
   leveling: { enabled: boolean };
+  poll: { enabled: boolean };
   dashboardDm: { enabled: boolean };
 }
 
@@ -132,13 +134,11 @@ export async function getOrCreateGuildConfig(guildId: string) {
   );
 }
 
-export type FeatureName = 'welcome' | 'rolebutton' | 'leveling' | 'dashboardDm';
+export type FeatureName = 'welcome' | 'rolebutton' | 'leveling' | 'poll' | 'dashboardDm';
 
 export async function isFeatureEnabled(guildId: string, feature: FeatureName): Promise<boolean> {
   const cfg = await GuildConfig.findOne({ guildId }, { features: 1 }).lean();
-  if (!cfg) {
-    // No config yet → use defaults (welcome/rolebutton/dashboardDm ON, leveling OFF)
-    return feature !== 'leveling';
-  }
-  return cfg.features?.[feature]?.enabled ?? (feature !== 'leveling');
+  const defaultOn = feature !== 'leveling';
+  if (!cfg) return defaultOn;
+  return cfg.features?.[feature]?.enabled ?? defaultOn;
 }

@@ -24,6 +24,7 @@ export default async function GuildLayout({
         <NavLink href={`/servers/${params.guildId}/welcome`}>👋 Welcome message</NavLink>
         <NavLink href={`/servers/${params.guildId}/rolepanels`}>🎯 Role panels</NavLink>
         <NavLink href={`/servers/${params.guildId}/leveling`}>⭐ Leveling</NavLink>
+        <NavLink href={`/servers/${params.guildId}/polls`}>📊 Polls</NavLink>
       </aside>
       <section>{children}</section>
     </div>

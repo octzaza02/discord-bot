@@ -6,6 +6,7 @@ type Features = {
   welcome: boolean;
   rolebutton: boolean;
   leveling: boolean;
+  poll: boolean;
   dashboardDm: boolean;
 };
 
@@ -36,6 +37,13 @@ const CARDS: Array<{
     title: 'Leveling',
     description: 'XP จากการแชท + level rewards',
     href: 'leveling',
+  },
+  {
+    key: 'poll',
+    icon: '📊',
+    title: 'Polls',
+    description: 'สร้างโพลโหวตด้วย /poll ในชุมชน',
+    href: 'polls',
   },
   {
     key: 'dashboardDm',

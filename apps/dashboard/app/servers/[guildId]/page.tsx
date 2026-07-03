@@ -17,6 +17,7 @@ export default async function GuildOverviewPage({
     welcome: cfg.features?.welcome?.enabled ?? true,
     rolebutton: cfg.features?.rolebutton?.enabled ?? true,
     leveling: cfg.features?.leveling?.enabled ?? false,
+    poll: cfg.features?.poll?.enabled ?? true,
     dashboardDm: cfg.features?.dashboardDm?.enabled ?? true,
   };
 
@@ -41,6 +42,9 @@ export default async function GuildOverviewPage({
           </li>
           <li>
             <b>⭐ Leveling</b> — ผู้ใช้ได้ XP จากการแชท → ขึ้นเลเวล + Level rewards
+          </li>
+          <li>
+            <b>📊 Polls</b> — สร้างโพลโหวตในชุมชน กดปุ่มโหวต ผลอัปเดตสด
           </li>
           <li>
             <b>🔧 Owner DM</b> — บอท DM หา owner ตอนถูกเชิญเข้าเซิร์ฟใหม่ พร้อมลิงก์นี้
