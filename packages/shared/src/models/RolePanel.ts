@@ -1,4 +1,5 @@
-import { Schema, model, models, type InferSchemaType, type Model } from 'mongoose';
+import mongoose, { Schema, type InferSchemaType, type Model } from 'mongoose';
+const { model, models } = mongoose;
 
 export const BUTTON_STYLES = ['Primary', 'Secondary', 'Success', 'Danger'] as const;
 export type ButtonStyle = (typeof BUTTON_STYLES)[number];

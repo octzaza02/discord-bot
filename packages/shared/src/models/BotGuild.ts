@@ -1,4 +1,5 @@
-import { Schema, model, models, type InferSchemaType, type Model } from 'mongoose';
+import mongoose, { Schema, type InferSchemaType, type Model } from 'mongoose';
+const { model, models } = mongoose;
 
 // Tracks which guilds the bot is currently a member of.
 // Dashboard uses this to filter the user's guild list.
