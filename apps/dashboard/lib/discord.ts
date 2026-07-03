@@ -7,14 +7,26 @@ export interface DiscordGuild {
 }
 
 const MANAGE_GUILD = 0x20n;
+const CACHE_TTL_MS = 60_000;
+const guildsCache = new Map<string, { expiresAt: number; guilds: DiscordGuild[] }>();
 
 export async function fetchUserGuilds(accessToken: string): Promise<DiscordGuild[]> {
+  const now = Date.now();
+  const cached = guildsCache.get(accessToken);
+  if (cached && cached.expiresAt > now) return cached.guilds;
+
   const res = await fetch('https://discord.com/api/v10/users/@me/guilds', {
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: 'no-store',
   });
-  if (!res.ok) throw new Error(`Discord API ${res.status}`);
-  return res.json();
+  if (!res.ok) {
+    // On rate limit or transient error, fall back to stale cache if we have one
+    if (cached) return cached.guilds;
+    throw new Error(`Discord API ${res.status}`);
+  }
+  const guilds = (await res.json()) as DiscordGuild[];
+  guildsCache.set(accessToken, { expiresAt: now + CACHE_TTL_MS, guilds });
+  return guilds;
 }
 
 export function userCanManage(guild: Pick<DiscordGuild, 'permissions' | 'owner'>): boolean {
