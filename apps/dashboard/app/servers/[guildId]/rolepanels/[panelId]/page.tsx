@@ -11,8 +11,14 @@ export default async function PanelEditorPage({
   await ensureDb();
   const panel = await RolePanel.findOne({ _id: params.panelId, guildId: params.guildId })
     .lean()
-    .catch(() => null);
-  if (!panel) notFound();
+    .catch((err) => {
+      console.error('[panel page] find failed', params, err);
+      return null;
+    });
+  if (!panel) {
+    console.warn('[panel page] not found', params);
+    notFound();
+  }
 
   return (
     <PanelEditor
