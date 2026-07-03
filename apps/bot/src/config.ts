@@ -12,5 +12,6 @@ export const config = {
   mongoUri: required('MONGO_URI'),
   internalSecret: process.env.INTERNAL_API_SECRET ?? '',
   internalPort: Number(process.env.BOT_INTERNAL_PORT ?? 3001),
+  dashboardUrl: process.env.DASHBOARD_URL ?? '',
   env: process.env.NODE_ENV ?? 'development',
 };
