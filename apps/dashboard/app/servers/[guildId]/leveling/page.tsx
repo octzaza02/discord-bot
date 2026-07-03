@@ -14,10 +14,10 @@ export default async function LevelingPage({ params }: { params: { guildId: stri
   return (
     <div className="space-y-10 max-w-3xl">
       <div>
-        <h1 className="text-2xl font-semibold mb-2">⭐ Leveling</h1>
-        <p className="text-sm text-neutral-400">
+        <h1 className="text-2xl font-semibold mb-2 text-amber-heading">⭐ Leveling</h1>
+        <p className="text-sm text-amber-sub">
           ผู้ใช้ได้ XP จากการแชท → สะสมจนขึ้นเลเวล เปิด/ปิดฟีเจอร์ที่{' '}
-          <a className="text-indigo-400 hover:underline" href={`/servers/${params.guildId}`}>
+          <a className="text-amber-link hover:text-amber-primary underline" href={`/servers/${params.guildId}`}>
             หน้าภาพรวม
           </a>
         </p>
@@ -30,8 +30,8 @@ export default async function LevelingPage({ params }: { params: { guildId: stri
         </p>
 
         <div className="space-y-2">
-          <div className="font-medium text-neutral-200">🎯 การตั้งค่า XP</div>
-          <ul className="list-disc pl-5 space-y-1 text-neutral-400 text-xs">
+          <div className="font-medium text-amber-heading">🎯 การตั้งค่า XP</div>
+          <ul className="list-disc pl-5 space-y-1 text-amber-sub text-xs">
             <li>
               <b>XP ต่อข้อความ</b> — ค่ามาตรฐาน <Kbd>15</Kbd> (เหมือน MEE6/Arcane)
             </li>
@@ -50,8 +50,8 @@ export default async function LevelingPage({ params }: { params: { guildId: stri
         </div>
 
         <div className="space-y-2">
-          <div className="font-medium text-neutral-200">📢 ประกาศ Level up</div>
-          <ul className="list-disc pl-5 space-y-1 text-neutral-400 text-xs">
+          <div className="font-medium text-amber-heading">📢 ประกาศ Level up</div>
+          <ul className="list-disc pl-5 space-y-1 text-amber-sub text-xs">
             <li>
               <b>same</b> — ส่งในห้องที่ user เพิ่งพิมพ์ (default)
             </li>
@@ -72,8 +72,8 @@ export default async function LevelingPage({ params }: { params: { guildId: stri
         </div>
 
         <div className="space-y-2">
-          <div className="font-medium text-neutral-200">🏆 Level Rewards</div>
-          <ul className="list-disc pl-5 space-y-1 text-neutral-400 text-xs">
+          <div className="font-medium text-amber-heading">🏆 Level Rewards</div>
+          <ul className="list-disc pl-5 space-y-1 text-amber-sub text-xs">
             <li>
               ตั้ง Level <Kbd>N</Kbd> → ให้ Role ID → บอท assign ให้อัตโนมัติเมื่อถึง
             </li>
@@ -90,8 +90,8 @@ export default async function LevelingPage({ params }: { params: { guildId: stri
         </div>
 
         <div className="space-y-2">
-          <div className="font-medium text-neutral-200">🎮 คำสั่งใน Discord</div>
-          <ul className="list-disc pl-5 space-y-1 text-neutral-400 text-xs">
+          <div className="font-medium text-amber-heading">🎮 คำสั่งใน Discord</div>
+          <ul className="list-disc pl-5 space-y-1 text-amber-sub text-xs">
             <li>
               <Kbd>/rank</Kbd> — ดู Level, XP, progress ของตัวเอง
             </li>
@@ -108,8 +108,8 @@ export default async function LevelingPage({ params }: { params: { guildId: stri
         </div>
 
         <div className="space-y-2">
-          <div className="font-medium text-neutral-200">🛠️ จัดการผู้ใช้ (ด้านล่างสุด)</div>
-          <ul className="list-disc pl-5 space-y-1 text-neutral-400 text-xs">
+          <div className="font-medium text-amber-heading">🛠️ จัดการผู้ใช้ (ด้านล่างสุด)</div>
+          <ul className="list-disc pl-5 space-y-1 text-amber-sub text-xs">
             <li>
               <b>Edit</b> — ตั้ง Total XP ของ user เอง (Level จะคำนวณให้ใหม่)
             </li>
@@ -122,7 +122,7 @@ export default async function LevelingPage({ params }: { params: { guildId: stri
           </ul>
         </div>
 
-        <div className="rounded bg-amber-500/10 border border-amber-500/30 p-3 text-xs text-amber-200/90">
+        <div className="rounded bg-amber-primary/10 border border-amber-primary/40 p-3 text-xs text-amber-heading">
           <b>ต้องเปิด feature ก่อน:</b> ไปที่หน้า <Kbd>ภาพรวม</Kbd> → toggle <b>Leveling ON</b> ก่อน
           ไม่งั้นบอทจะไม่นับ XP
         </div>

@@ -36,52 +36,54 @@ export function WelcomeForm({ guildId, initial }: { guildId: string; initial: In
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <label className="flex items-center gap-3">
-        <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
+      <label className="flex items-center gap-3 text-amber-heading">
+        <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="accent-amber-primary" />
         <span>เปิดใช้งานข้อความต้อนรับ</span>
       </label>
 
       <div>
-        <label className="block text-sm mb-1 text-neutral-400">Channel ID</label>
+        <label className="block text-sm mb-1 text-amber-sub">Channel ID</label>
         <input
           value={channelId}
           onChange={(e) => setChannelId(e.target.value)}
           placeholder="123456789012345678"
-          className="w-full px-3 py-2 rounded bg-neutral-900 border border-neutral-700 font-mono text-sm"
+          className="w-full px-3 py-2 rounded bg-amber-surface border border-amber-border text-amber-heading font-mono text-sm focus:outline-none focus:border-amber-primary"
         />
-        <p className="text-xs text-neutral-500 mt-1">
+        <p className="text-xs text-amber-sub mt-1">
           เปิด Developer Mode ใน Discord แล้วคลิกขวาที่ห้อง → Copy Channel ID
         </p>
       </div>
 
       <div>
-        <label className="block text-sm mb-1 text-neutral-400">Template</label>
+        <label className="block text-sm mb-1 text-amber-sub">Template</label>
         <textarea
           value={template}
           onChange={(e) => setTemplate(e.target.value)}
           rows={4}
-          className="w-full px-3 py-2 rounded bg-neutral-900 border border-neutral-700"
+          className="w-full px-3 py-2 rounded bg-amber-surface border border-amber-border text-amber-heading focus:outline-none focus:border-amber-primary"
         />
-        <p className="text-xs text-neutral-500 mt-1">
+        <p className="text-xs text-amber-sub mt-1">
           ตัวแปร: <code>{'{user}'}</code> <code>{'{username}'}</code> <code>{'{server}'}</code>{' '}
           <code>{'{memberCount}'}</code>
         </p>
       </div>
 
-      <div className="p-4 rounded bg-neutral-900 border border-neutral-800">
-        <div className="text-xs text-neutral-500 mb-2">Preview</div>
-        <div className="whitespace-pre-wrap">{preview || <em className="text-neutral-600">(ว่าง)</em>}</div>
+      <div className="p-4 rounded bg-amber-surface border border-amber-border shadow-sm">
+        <div className="text-xs text-amber-sub mb-2">Preview</div>
+        <div className="whitespace-pre-wrap text-amber-heading">
+          {preview || <em className="text-amber-sub">(ว่าง)</em>}
+        </div>
       </div>
 
       <div className="flex items-center gap-3">
         <button
           onClick={save}
           disabled={saving}
-          className="px-4 py-2 rounded bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50"
+          className="px-4 py-2 rounded bg-amber-primary text-white hover:bg-amber-link disabled:opacity-50 font-medium shadow-sm"
         >
           {saving ? 'กำลังบันทึก...' : 'บันทึก'}
         </button>
-        {msg && <span className="text-sm">{msg}</span>}
+        {msg && <span className="text-sm text-amber-heading">{msg}</span>}
       </div>
     </div>
   );

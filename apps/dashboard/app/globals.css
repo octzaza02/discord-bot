@@ -3,9 +3,20 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
+  --color-bg-base: #FFF8E8;
+  --color-bg-surface: #FFFFFF;
+  --color-border: #E8C87A;
+  --color-gold: #C8860A;
+  --color-primary: #E07820;
+  --color-link: #C8600A;
+  --color-text-sub: #B8740A;
+  --color-text-head: #5C2D0A;
 }
+
 body {
-  @apply bg-neutral-950 text-neutral-100 min-h-screen;
+  @apply bg-amber-bg text-amber-heading min-h-screen;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
+
+h1, h2, h3 { color: var(--color-text-head); }

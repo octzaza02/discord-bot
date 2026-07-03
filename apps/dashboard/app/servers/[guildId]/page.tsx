@@ -22,8 +22,8 @@ export default async function GuildOverviewPage({
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold mb-2">📊 ภาพรวม</h1>
-      <p className="text-sm text-neutral-400 mb-6">
+      <h1 className="text-2xl font-semibold mb-2 text-amber-heading">📊 ภาพรวม</h1>
+      <p className="text-sm text-amber-sub mb-6">
         เปิด/ปิดแต่ละฟีเจอร์ที่ต้องการใช้ในเซิร์ฟเวอร์นี้
       </p>
 
@@ -32,7 +32,7 @@ export default async function GuildOverviewPage({
           แต่ละการ์ดคือฟีเจอร์แยกอิสระ — <b>สลับ toggle</b> = เปิด/ปิดฟีเจอร์นั้นทันที
           (บันทึกอัตโนมัติ)
         </p>
-        <ul className="list-disc pl-5 space-y-1 text-neutral-400">
+        <ul className="list-disc pl-5 space-y-1 text-amber-sub">
           <li>
             <b>👋 Welcome message</b> — ส่งข้อความต้อนรับเมื่อสมาชิกใหม่เข้าเซิร์ฟ
           </li>
@@ -46,10 +46,10 @@ export default async function GuildOverviewPage({
             <b>🔧 Owner DM</b> — บอท DM หา owner ตอนถูกเชิญเข้าเซิร์ฟใหม่ พร้อมลิงก์นี้
           </li>
         </ul>
-        <p className="text-neutral-400">
+        <p className="text-amber-sub">
           กดปุ่ม <Kbd>ตั้งค่า →</Kbd> ในแต่ละการ์ดเพื่อเข้าไปปรับรายละเอียด
         </p>
-        <p className="text-neutral-500 text-xs pt-2 border-t border-neutral-800">
+        <p className="text-amber-sub text-xs pt-2 border-t border-amber-border">
           <b>Tip:</b> ทุกฟีเจอร์แยกกันต่อเซิร์ฟ ปิดในเซิร์ฟหนึ่งไม่กระทบเซิร์ฟอื่น
         </p>
       </HowToUse>

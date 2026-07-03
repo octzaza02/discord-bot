@@ -79,12 +79,12 @@ export function UserAdmin({ guildId }: { guildId: string }) {
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="font-medium text-lg">จัดการผู้ใช้ (Top 20)</h2>
+        <h2 className="font-medium text-lg text-amber-heading">จัดการผู้ใช้ (Top 20)</h2>
         <div className="flex items-center gap-3">
-          {msg && <span className="text-xs text-neutral-400">{msg}</span>}
+          {msg && <span className="text-xs text-amber-sub">{msg}</span>}
           <button
             onClick={resetAll}
-            className="text-sm px-3 py-1 rounded bg-red-600/80 hover:bg-red-500 text-white"
+            className="text-sm px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-white shadow-sm"
           >
             Reset All XP
           </button>
@@ -92,13 +92,13 @@ export function UserAdmin({ guildId }: { guildId: string }) {
       </div>
 
       {loading ? (
-        <p className="text-sm text-neutral-500">โหลด...</p>
+        <p className="text-sm text-amber-sub">โหลด...</p>
       ) : users.length === 0 ? (
-        <p className="text-sm text-neutral-500">ยังไม่มีใครมี XP</p>
+        <p className="text-sm text-amber-sub">ยังไม่มีใครมี XP</p>
       ) : (
-        <div className="rounded-lg border border-neutral-800 overflow-hidden">
+        <div className="rounded-lg border border-amber-border bg-amber-surface overflow-hidden shadow-sm">
           <table className="w-full text-sm">
-            <thead className="bg-neutral-900 text-neutral-400">
+            <thead className="bg-amber-bg text-amber-sub">
               <tr>
                 <th className="text-left px-3 py-2">#</th>
                 <th className="text-left px-3 py-2">User ID</th>
@@ -109,21 +109,21 @@ export function UserAdmin({ guildId }: { guildId: string }) {
             </thead>
             <tbody>
               {users.map((u, i) => (
-                <tr key={u.userId} className="border-t border-neutral-800">
-                  <td className="px-3 py-2 text-neutral-500">{i + 1}</td>
+                <tr key={u.userId} className="border-t border-amber-border text-amber-heading">
+                  <td className="px-3 py-2 text-amber-sub">{i + 1}</td>
                   <td className="px-3 py-2 font-mono text-xs">{u.userId}</td>
                   <td className="px-3 py-2 text-right">{levelFromXp(u.totalXp)}</td>
                   <td className="px-3 py-2 text-right">{u.totalXp.toLocaleString()}</td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">
                     <button
                       onClick={() => editXp(u.userId, u.totalXp)}
-                      className="text-indigo-400 hover:text-indigo-300 text-xs mr-3"
+                      className="text-amber-link hover:text-amber-primary text-xs mr-3 font-medium"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => resetUser(u.userId)}
-                      className="text-red-400 hover:text-red-300 text-xs"
+                      className="text-red-600 hover:text-red-700 text-xs font-medium"
                     >
                       Reset
                     </button>

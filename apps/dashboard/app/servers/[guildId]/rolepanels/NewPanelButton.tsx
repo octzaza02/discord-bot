@@ -30,7 +30,7 @@ export function NewPanelButton({ guildId }: { guildId: string }) {
     <button
       onClick={create}
       disabled={loading}
-      className="px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-500 text-sm disabled:opacity-50"
+      className="px-3 py-2 rounded bg-amber-primary text-white hover:bg-amber-link text-sm disabled:opacity-50 shadow-sm font-medium"
     >
       {loading ? '...' : '+ สร้างใหม่'}
     </button>

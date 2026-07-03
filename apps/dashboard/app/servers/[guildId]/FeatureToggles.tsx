@@ -82,26 +82,26 @@ export function FeatureToggles({
         return (
           <div
             key={c.key}
-            className="p-4 rounded-lg border border-neutral-800 bg-neutral-900 flex flex-col gap-3"
+            className="p-4 rounded-lg border border-amber-border bg-amber-surface shadow-sm flex flex-col gap-3"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xl">{c.icon}</span>
-                  <span className="font-medium">{c.title}</span>
+                  <span className="font-medium text-amber-heading">{c.title}</span>
                 </div>
-                <div className="text-xs text-neutral-400">{c.description}</div>
+                <div className="text-xs text-amber-sub">{c.description}</div>
               </div>
               <button
                 onClick={() => toggle(c.key)}
                 disabled={busy === c.key}
                 className={`relative w-12 h-6 rounded-full transition-colors ${
-                  on ? 'bg-emerald-500' : 'bg-neutral-700'
+                  on ? 'bg-amber-primary' : 'bg-amber-border'
                 } disabled:opacity-50`}
                 aria-pressed={on}
               >
                 <span
-                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
                     on ? 'translate-x-6' : ''
                   }`}
                 />
@@ -110,7 +110,7 @@ export function FeatureToggles({
             {c.href && (
               <Link
                 href={`/servers/${guildId}/${c.href}`}
-                className="text-xs text-indigo-400 hover:text-indigo-300 self-start"
+                className="text-xs text-amber-link hover:text-amber-primary self-start font-medium"
               >
                 ตั้งค่า →
               </Link>
