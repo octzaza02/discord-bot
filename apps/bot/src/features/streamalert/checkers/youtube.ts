@@ -29,6 +29,43 @@ function parseRss(xml: string): { channelName: string; entries: RssEntry[] } {
   return { channelName, entries };
 }
 
+// Bypass YouTube EU cookie consent page (returns different HTML without channelId)
+const YT_HEADERS = {
+  'user-agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+  'accept-language': 'en-US,en;q=0.9',
+  cookie: 'CONSENT=YES+cb.20210328-17-p0.en+FX+000',
+};
+
+function extractChannelId(html: string): string | null {
+  // Try multiple patterns — YouTube tweaks HTML periodically
+  const patterns = [
+    /<link rel="canonical" href="https:\/\/www\.youtube\.com\/channel\/(UC[\w-]{22})"/,
+    /<meta property="og:url" content="https:\/\/www\.youtube\.com\/channel\/(UC[\w-]{22})"/,
+    /"channelId":"(UC[\w-]{22})"/,
+    /"externalId":"(UC[\w-]{22})"/,
+    /\/channel\/(UC[\w-]{22})/,
+  ];
+  for (const p of patterns) {
+    const m = html.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function extractChannelName(html: string): string | null {
+  const patterns = [
+    /<meta property="og:title" content="([^"]+)"/,
+    /<meta name="title" content="([^"]+)"/,
+    /"title":"([^"]{1,120})"/,
+  ];
+  for (const p of patterns) {
+    const m = html.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
 async function resolveChannelId(
   input: string,
 ): Promise<{ id: string; name: string } | null> {
@@ -42,19 +79,28 @@ async function resolveChannelId(
     return { id: input, name: channelName };
   }
 
-  // Handle / bare name → scrape channel page for channelId meta
-  const handle = input.startsWith('@') ? input : `@${input}`;
-  const res = await fetch(`https://www.youtube.com/${handle}`, {
-    headers: { 'user-agent': 'Mozilla/5.0 (compatible; StreamAlertBot/1.0)' },
-  });
-  if (!res.ok) return null;
-  const html = await res.text();
-  const idMatch = html.match(/"channelId":"(UC[\w-]{22})"/);
-  const nameMatch =
-    html.match(/<meta property="og:title" content="([^"]+)"/) ??
-    html.match(/"title":"([^"]+)"/);
-  if (!idMatch) return null;
-  return { id: idMatch[1], name: nameMatch ? nameMatch[1] : idMatch[1] };
+  // Try handle then bare name
+  const attempts = input.startsWith('@')
+    ? [input]
+    : [`@${input}`, `c/${input}`, `user/${input}`];
+
+  for (const path of attempts) {
+    try {
+      const res = await fetch(`https://www.youtube.com/${path}`, {
+        headers: YT_HEADERS,
+        redirect: 'follow',
+      });
+      if (!res.ok) continue;
+      const html = await res.text();
+      const id = extractChannelId(html);
+      if (!id) continue;
+      const name = extractChannelName(html) ?? id;
+      return { id, name };
+    } catch (err) {
+      console.warn('[youtube resolve]', path, err instanceof Error ? err.message : err);
+    }
+  }
+  return null;
 }
 
 export const youtubeChecker: CreatorChecker = {
