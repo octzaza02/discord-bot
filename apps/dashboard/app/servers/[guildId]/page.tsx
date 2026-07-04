@@ -18,6 +18,7 @@ export default async function GuildOverviewPage({
     rolebutton: cfg.features?.rolebutton?.enabled ?? true,
     leveling: cfg.features?.leveling?.enabled ?? false,
     poll: cfg.features?.poll?.enabled ?? true,
+    streamalert: cfg.features?.streamalert?.enabled ?? false,
     dashboardDm: cfg.features?.dashboardDm?.enabled ?? true,
   };
 
@@ -45,6 +46,9 @@ export default async function GuildOverviewPage({
           </li>
           <li>
             <b>📊 Polls</b> — สร้างโพลโหวตในชุมชน กดปุ่มโหวต ผลอัปเดตสด
+          </li>
+          <li>
+            <b>🔔 Stream Alerts</b> — แจ้งเตือน YouTube/Twitch/TikTok/Facebook เมื่อ creator ปล่อยคลิปใหม่หรือไลฟ์
           </li>
           <li>
             <b>🔧 Owner DM</b> — บอท DM หา owner ตอนถูกเชิญเข้าเซิร์ฟใหม่ พร้อมลิงก์นี้

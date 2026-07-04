@@ -7,6 +7,7 @@ type Features = {
   rolebutton: boolean;
   leveling: boolean;
   poll: boolean;
+  streamalert: boolean;
   dashboardDm: boolean;
 };
 
@@ -44,6 +45,13 @@ const CARDS: Array<{
     title: 'Polls',
     description: 'สร้างโพลโหวตด้วย /poll ในชุมชน',
     href: 'polls',
+  },
+  {
+    key: 'streamalert',
+    icon: '🔔',
+    title: 'Stream Alerts',
+    description: 'แจ้งเตือน YouTube/Twitch/TikTok/Facebook',
+    href: 'streamalerts',
   },
   {
     key: 'dashboardDm',

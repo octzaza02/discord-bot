@@ -24,6 +24,7 @@ const FeaturesSchema = new Schema(
     rolebutton: { type: FeatureFlagSchema, default: () => ({ enabled: true }) },
     leveling: { type: FeatureFlagSchema, default: () => ({ enabled: false }) },
     poll: { type: FeatureFlagSchema, default: () => ({ enabled: true }) },
+    streamalert: { type: FeatureFlagSchema, default: () => ({ enabled: false }) },
     dashboardDm: { type: FeatureFlagSchema, default: () => ({ enabled: true }) },
   },
   { _id: false },
@@ -110,6 +111,7 @@ export interface FeaturesConfig {
   rolebutton: { enabled: boolean };
   leveling: { enabled: boolean };
   poll: { enabled: boolean };
+  streamalert: { enabled: boolean };
   dashboardDm: { enabled: boolean };
 }
 
@@ -134,11 +136,17 @@ export async function getOrCreateGuildConfig(guildId: string) {
   );
 }
 
-export type FeatureName = 'welcome' | 'rolebutton' | 'leveling' | 'poll' | 'dashboardDm';
+export type FeatureName =
+  | 'welcome'
+  | 'rolebutton'
+  | 'leveling'
+  | 'poll'
+  | 'streamalert'
+  | 'dashboardDm';
 
 export async function isFeatureEnabled(guildId: string, feature: FeatureName): Promise<boolean> {
   const cfg = await GuildConfig.findOne({ guildId }, { features: 1 }).lean();
-  const defaultOn = feature !== 'leveling';
+  const defaultOn = feature !== 'leveling' && feature !== 'streamalert';
   if (!cfg) return defaultOn;
   return cfg.features?.[feature]?.enabled ?? defaultOn;
 }
