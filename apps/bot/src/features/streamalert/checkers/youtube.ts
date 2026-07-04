@@ -112,7 +112,7 @@ export const youtubeChecker: CreatorChecker = {
     return { creatorId: info.id, name: info.name };
   },
 
-  async check(channelId: string): Promise<CheckResult> {
+  async check(channelId: string, prevVideoId: string | null): Promise<CheckResult> {
     const res = await fetch(YT_RSS(channelId));
     if (!res.ok) throw new Error(`YouTube RSS ${res.status}`);
     const xml = await res.text();
@@ -121,6 +121,20 @@ export const youtubeChecker: CreatorChecker = {
       return { events: [], latestVideoId: null };
     }
     const latest = entries[0];
+
+    // If nothing changed since last cycle, skip status check to save requests
+    if (latest.videoId === prevVideoId) {
+      return { events: [], latestVideoId: latest.videoId };
+    }
+
+    // NEW entry — verify it's actually watchable content (not a scheduled/waiting-room live)
+    const status = await getLiveStatus(latest.videoId);
+    if (status === 'upcoming') {
+      // Scheduled livestream not yet broadcasting — do NOT notify, do NOT advance state
+      // (so we recheck next cycle and fire when broadcast actually starts)
+      return { events: [], latestVideoId: null };
+    }
+
     const ev: StreamEvent = {
       id: latest.videoId,
       title: latest.title,
@@ -133,3 +147,31 @@ export const youtubeChecker: CreatorChecker = {
     return { events: [ev], latestVideoId: latest.videoId };
   },
 };
+
+async function getLiveStatus(videoId: string): Promise<'live' | 'upcoming' | 'video'> {
+  try {
+    const res = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+      headers: YT_HEADERS,
+    });
+    if (!res.ok) return 'video';
+    const html = await res.text();
+
+    // Explicit upcoming markers (scheduled / waiting room / pre-broadcast)
+    if (/"isUpcoming"\s*:\s*true/.test(html)) return 'upcoming';
+    if (/"liveBroadcastDetails"\s*:\s*\{[^}]*"isLiveNow"\s*:\s*false/.test(html)) {
+      // Has broadcast details but not live now — could be upcoming or ended
+      // Check scheduledStartTime to distinguish
+      if (/"scheduledStartTime"/.test(html) && !/"endTimestamp"/.test(html)) return 'upcoming';
+    }
+
+    // Explicit live markers
+    if (/"isLiveNow"\s*:\s*true/.test(html)) return 'live';
+    if (/"isLive"\s*:\s*true/.test(html)) return 'live';
+
+    // Regular uploaded video
+    return 'video';
+  } catch {
+    // Network error → fail-safe: treat as video (don't want to miss real uploads)
+    return 'video';
+  }
+}

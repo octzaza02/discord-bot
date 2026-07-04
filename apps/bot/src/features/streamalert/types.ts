@@ -24,5 +24,5 @@ export interface CheckResult {
 export interface CreatorChecker {
   platform: StreamPlatform;
   validate(input: string): Promise<CreatorInfo | null>;
-  check(creatorId: string): Promise<CheckResult>;
+  check(creatorId: string, prevVideoId: string | null): Promise<CheckResult>;
 }

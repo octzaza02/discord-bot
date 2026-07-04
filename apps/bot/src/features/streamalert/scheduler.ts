@@ -29,9 +29,11 @@ async function processCreator(
 
   if (state.cooldownUntil && state.cooldownUntil > new Date()) return;
 
+  const prevVideoId = state.latestVideoId;
+
   let result;
   try {
-    result = await youtube.check(creatorId);
+    result = await youtube.check(creatorId, prevVideoId);
     state.failCount = 0;
     state.cooldownUntil = null;
   } catch (err) {
@@ -49,7 +51,6 @@ async function processCreator(
   }
 
   state.checkedAt = new Date();
-  const prevVideoId = state.latestVideoId;
   if (result.latestVideoId) state.latestVideoId = result.latestVideoId;
   await state.save();
 
