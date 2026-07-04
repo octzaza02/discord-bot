@@ -19,6 +19,8 @@ async function processCreator(
     guildId: string;
     discordChannelId: string;
     lastVideoId: string | null;
+    pingType?: 'none' | 'role' | 'everyone' | 'here';
+    pingRoleId?: string | null;
   }>,
 ) {
   const state = await StreamState.findOneAndUpdate(
@@ -67,6 +69,10 @@ async function processCreator(
         sub.guildId,
         sub.discordChannelId,
         ev,
+        {
+          pingType: sub.pingType ?? 'none',
+          pingRoleId: sub.pingRoleId ?? null,
+        },
       ).catch((err) => console.error('[streamalert] notify failed', err));
       await StreamSubscription.updateOne(
         { _id: sub._id },

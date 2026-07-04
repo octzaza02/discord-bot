@@ -20,6 +20,8 @@ export default async function StreamAlertsPage({
     creatorId: s.creatorId,
     creatorName: s.creatorName,
     discordChannelId: s.discordChannelId,
+    pingType: (s.pingType ?? 'none') as 'none' | 'role' | 'everyone' | 'here',
+    pingRoleId: s.pingRoleId ?? null,
   }));
 
   return (

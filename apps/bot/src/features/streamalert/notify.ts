@@ -1,11 +1,17 @@
-import { ChannelType, EmbedBuilder, type Client } from 'discord.js';
+import { ChannelType, EmbedBuilder, type Client, type MessageCreateOptions } from 'discord.js';
 import type { StreamEvent } from './types.js';
+
+export interface StreamPingConfig {
+  pingType: 'none' | 'role' | 'everyone' | 'here';
+  pingRoleId: string | null;
+}
 
 export async function sendStreamNotification(
   client: Client,
   guildId: string,
   channelId: string,
   ev: StreamEvent,
+  ping?: StreamPingConfig,
 ) {
   const guild = await client.guilds.fetch(guildId).catch(() => null);
   if (!guild) return;
@@ -29,7 +35,22 @@ export async function sendStreamNotification(
     embed.addFields({ name: 'ช่อง', value: `[${ev.channelName}](${ev.channelUrl})`, inline: true });
   }
 
+  let prefix = '';
+  const allowedMentions: MessageCreateOptions['allowedMentions'] = { parse: [] };
+  if (ping) {
+    if (ping.pingType === 'role' && ping.pingRoleId) {
+      prefix = `<@&${ping.pingRoleId}> `;
+      allowedMentions.roles = [ping.pingRoleId];
+    } else if (ping.pingType === 'everyone') {
+      prefix = '@everyone ';
+      allowedMentions.parse = ['everyone'];
+    } else if (ping.pingType === 'here') {
+      prefix = '@here ';
+      allowedMentions.parse = ['everyone'];
+    }
+  }
+
   await channel
-    .send({ content: ev.url, embeds: [embed] })
+    .send({ content: `${prefix}${ev.url}`, embeds: [embed], allowedMentions })
     .catch((err) => console.error('[streamalert notify] send failed', err));
 }

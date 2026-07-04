@@ -29,6 +29,23 @@ const subscribeData = new SlashCommandBuilder()
       .setDescription('ห้อง Discord ที่จะแจ้งเตือน')
       .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
       .setRequired(true),
+  )
+  .addRoleOption((o) =>
+    o
+      .setName('ping_role')
+      .setDescription('role ที่จะแท็กตอนแจ้งเตือน (optional)')
+      .setRequired(false),
+  )
+  .addStringOption((o) =>
+    o
+      .setName('ping')
+      .setDescription('แท็กพิเศษ (ถ้าเลือก ping_role จะถูก override)')
+      .setRequired(false)
+      .addChoices(
+        { name: 'ไม่แท็ก', value: 'none' },
+        { name: '@everyone', value: 'everyone' },
+        { name: '@here', value: 'here' },
+      ),
   );
 
 async function subscribeExec(interaction: ChatInputCommandInteraction) {
@@ -46,6 +63,17 @@ async function subscribeExec(interaction: ChatInputCommandInteraction) {
 
   const input = interaction.options.getString('channel', true);
   const notifyChannel = interaction.options.getChannel('notify_in', true);
+  const pingRole = interaction.options.getRole('ping_role');
+  const pingChoice = interaction.options.getString('ping');
+
+  let pingType: 'none' | 'role' | 'everyone' | 'here' = 'none';
+  let pingRoleId: string | null = null;
+  if (pingRole) {
+    pingType = 'role';
+    pingRoleId = pingRole.id;
+  } else if (pingChoice === 'everyone' || pingChoice === 'here') {
+    pingType = pingChoice;
+  }
 
   await interaction.deferReply({ ephemeral: true });
 
@@ -75,6 +103,8 @@ async function subscribeExec(interaction: ChatInputCommandInteraction) {
       platform: 'youtube',
       creatorId: info.creatorId,
       creatorName: info.name,
+      pingType,
+      pingRoleId,
     });
   } catch (err: any) {
     if (err?.code === 11000) {
@@ -88,8 +118,17 @@ async function subscribeExec(interaction: ChatInputCommandInteraction) {
     return;
   }
 
+  const pingSuffix =
+    pingType === 'role' && pingRoleId
+      ? ` · ping <@&${pingRoleId}>`
+      : pingType === 'everyone'
+        ? ' · ping @everyone'
+        : pingType === 'here'
+          ? ' · ping @here'
+          : '';
   await interaction.editReply({
-    content: `✅ ติดตาม **${info.name}** แจ้งเตือนที่ <#${notifyChannel.id}>`,
+    content: `✅ ติดตาม **${info.name}** แจ้งเตือนที่ <#${notifyChannel.id}>${pingSuffix}`,
+    allowedMentions: { parse: [] },
   });
 }
 
@@ -170,12 +209,22 @@ async function listExec(interaction: ChatInputCommandInteraction) {
     .setColor(0xff0000)
     .setDescription(
       subs
-        .map((s) => `• **${s.creatorName || s.creatorId}** → <#${s.discordChannelId}>`)
+        .map((s) => {
+          const ping =
+            s.pingType === 'role' && s.pingRoleId
+              ? ` · <@&${s.pingRoleId}>`
+              : s.pingType === 'everyone'
+                ? ' · @everyone'
+                : s.pingType === 'here'
+                  ? ' · @here'
+                  : '';
+          return `• **${s.creatorName || s.creatorId}** → <#${s.discordChannelId}>${ping}`;
+        })
         .join('\n')
         .slice(0, 4000),
     );
 
-  await interaction.reply({ embeds: [embed], ephemeral: true });
+  await interaction.reply({ embeds: [embed], ephemeral: true, allowedMentions: { parse: [] } });
 }
 
 export const listSubsCommand: SlashCommand = { data: listData, execute: listExec };

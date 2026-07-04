@@ -4,6 +4,9 @@ const { model, models } = mongoose;
 export const STREAM_PLATFORMS = ['youtube'] as const;
 export type StreamPlatform = (typeof STREAM_PLATFORMS)[number];
 
+export const STREAM_PING_TYPES = ['none', 'role', 'everyone', 'here'] as const;
+export type StreamPingType = (typeof STREAM_PING_TYPES)[number];
+
 export interface StreamSubscriptionDoc {
   _id: mongoose.Types.ObjectId;
   guildId: string;
@@ -12,6 +15,8 @@ export interface StreamSubscriptionDoc {
   creatorId: string; // YouTube channel ID (UCxxx)
   creatorName: string;
   lastVideoId: string | null;
+  pingType: StreamPingType;
+  pingRoleId: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -24,6 +29,8 @@ const StreamSubscriptionSchema = new Schema(
     creatorId: { type: String, required: true },
     creatorName: { type: String, default: '' },
     lastVideoId: { type: String, default: null },
+    pingType: { type: String, enum: STREAM_PING_TYPES, default: 'none' },
+    pingRoleId: { type: String, default: null },
   },
   { timestamps: true },
 );
