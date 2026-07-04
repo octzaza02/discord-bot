@@ -48,7 +48,7 @@ export default async function GuildOverviewPage({
             <b>📊 Polls</b> — สร้างโพลโหวตในชุมชน กดปุ่มโหวต ผลอัปเดตสด
           </li>
           <li>
-            <b>🔔 Stream Alerts</b> — แจ้งเตือน YouTube/Twitch/TikTok/Facebook เมื่อ creator ปล่อยคลิปใหม่หรือไลฟ์
+            <b>🔔 YouTube Alerts</b> — แจ้งเตือนเมื่อ YouTube channel ที่ติดตามปล่อยคลิปใหม่หรือเริ่มไลฟ์
           </li>
           <li>
             <b>🔧 Owner DM</b> — บอท DM หา owner ตอนถูกเชิญเข้าเซิร์ฟใหม่ พร้อมลิงก์นี้

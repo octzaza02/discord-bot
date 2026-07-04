@@ -11,10 +11,9 @@ export interface StreamStateDoc {
   creatorId: string;
   latestVideoId: string | null;
   latestVideoAt: Date | null;
-  liveId: string | null; // ID of currently active live (null when not live)
   checkedAt: Date;
   failCount: number;
-  cooldownUntil: Date | null; // if set, skip until this time
+  cooldownUntil: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -25,7 +24,6 @@ const StreamStateSchema = new Schema(
     creatorId: { type: String, required: true },
     latestVideoId: { type: String, default: null },
     latestVideoAt: { type: Date, default: null },
-    liveId: { type: String, default: null },
     checkedAt: { type: Date, default: () => new Date(0) },
     failCount: { type: Number, default: 0 },
     cooldownUntil: { type: Date, default: null },

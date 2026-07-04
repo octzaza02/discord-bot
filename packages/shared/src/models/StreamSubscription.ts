@@ -1,7 +1,7 @@
 import mongoose, { Schema, type Model } from 'mongoose';
 const { model, models } = mongoose;
 
-export const STREAM_PLATFORMS = ['youtube', 'twitch', 'tiktok', 'facebook'] as const;
+export const STREAM_PLATFORMS = ['youtube'] as const;
 export type StreamPlatform = (typeof STREAM_PLATFORMS)[number];
 
 export interface StreamSubscriptionDoc {
@@ -9,10 +9,9 @@ export interface StreamSubscriptionDoc {
   guildId: string;
   discordChannelId: string;
   platform: StreamPlatform;
-  creatorId: string; // normalized ID (YT channel ID / Twitch login / TikTok username / FB page ID)
+  creatorId: string; // YouTube channel ID (UCxxx)
   creatorName: string;
   lastVideoId: string | null;
-  lastLiveId: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -25,7 +24,6 @@ const StreamSubscriptionSchema = new Schema(
     creatorId: { type: String, required: true },
     creatorName: { type: String, default: '' },
     lastVideoId: { type: String, default: null },
-    lastLiveId: { type: String, default: null },
   },
   { timestamps: true },
 );

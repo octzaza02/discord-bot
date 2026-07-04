@@ -49,8 +49,8 @@ const CARDS: Array<{
   {
     key: 'streamalert',
     icon: '🔔',
-    title: 'Stream Alerts',
-    description: 'แจ้งเตือน YouTube/Twitch/TikTok/Facebook',
+    title: 'YouTube Alerts',
+    description: 'แจ้งเตือนคลิป/ไลฟ์ใหม่จาก YouTube channel',
     href: 'streamalerts',
   },
   {

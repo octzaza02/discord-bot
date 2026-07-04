@@ -6,10 +6,7 @@ export interface CreatorInfo {
   avatarUrl?: string | null;
 }
 
-export type StreamEventKind = 'video' | 'live';
-
 export interface StreamEvent {
-  kind: StreamEventKind;
   id: string;
   title: string;
   url: string;
@@ -21,14 +18,11 @@ export interface StreamEvent {
 
 export interface CheckResult {
   events: StreamEvent[];
-  liveId: string | null;
   latestVideoId: string | null;
 }
 
 export interface CreatorChecker {
   platform: StreamPlatform;
-  isEnabled(): boolean;
-  reason(): string; // human-readable reason when disabled
   validate(input: string): Promise<CreatorInfo | null>;
   check(creatorId: string): Promise<CheckResult>;
 }

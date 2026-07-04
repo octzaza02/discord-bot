@@ -5,42 +5,28 @@ import {
   SlashCommandBuilder,
   type ChatInputCommandInteraction,
 } from 'discord.js';
-import {
-  StreamSubscription,
-  isFeatureEnabled,
-  STREAM_PLATFORMS,
-  type StreamPlatform,
-} from '@discord-bot/shared';
+import { StreamSubscription, isFeatureEnabled } from '@discord-bot/shared';
 import type { SlashCommand } from '../../core/types.js';
-import { getChecker } from './checkers/index.js';
-import { normalizeInput } from './parser.js';
-
-const platformChoices = STREAM_PLATFORMS.map((p) => ({ name: p, value: p }));
+import { youtube } from './checkers/index.js';
+import { parseYouTubeInput } from './parser.js';
 
 // ---------- /subscribe ----------
 const subscribeData = new SlashCommandBuilder()
   .setName('subscribe')
-  .setDescription('เพิ่มการติดตาม creator (YouTube, Twitch, TikTok, Facebook)')
+  .setDescription('เพิ่มการติดตาม YouTube channel')
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
   .setDMPermission(false)
   .addStringOption((o) =>
     o
-      .setName('platform')
-      .setDescription('แพลตฟอร์ม')
-      .setRequired(true)
-      .addChoices(...platformChoices),
-  )
-  .addStringOption((o) =>
-    o
-      .setName('creator')
-      .setDescription('URL หรือชื่อ/ID ของ creator (Facebook ต้องใส่ pageId:token)')
+      .setName('channel')
+      .setDescription('URL หรือ Channel ID หรือ @handle ของ YouTube')
       .setRequired(true)
       .setMaxLength(500),
   )
   .addChannelOption((o) =>
     o
-      .setName('channel')
-      .setDescription('ห้องที่จะแจ้งเตือน')
+      .setName('notify_in')
+      .setDescription('ห้อง Discord ที่จะแจ้งเตือน')
       .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
       .setRequired(true),
   );
@@ -58,36 +44,26 @@ async function subscribeExec(interaction: ChatInputCommandInteraction) {
     return;
   }
 
-  const platform = interaction.options.getString('platform', true) as StreamPlatform;
-  const creatorInput = interaction.options.getString('creator', true);
-  const channel = interaction.options.getChannel('channel', true);
+  const input = interaction.options.getString('channel', true);
+  const notifyChannel = interaction.options.getChannel('notify_in', true);
 
-  const checker = getChecker(platform);
-  if (!checker.isEnabled()) {
-    await interaction.reply({
-      content: `⚠️ **${platform}** ยังไม่พร้อมใช้งาน: ${checker.reason()}`,
-      ephemeral: true,
+  await interaction.deferReply({ ephemeral: true });
+
+  const parsed = parseYouTubeInput(input);
+  if (!parsed) {
+    await interaction.editReply({
+      content: '❌ อ่านค่า channel ไม่ออก — ลองใส่ URL หรือ Channel ID (UCxxx) หรือ @handle',
     });
     return;
   }
 
-  await interaction.deferReply({ ephemeral: true });
-
-  // For Facebook, creator input is expected to be "pageId:token", pass raw.
-  // For others, normalize.
-  const normalized = platform === 'facebook' ? creatorInput.trim() : normalizeInput(platform, creatorInput);
-  if (!normalized) {
-    await interaction.editReply({ content: '❌ อ่านค่า creator ไม่ออก — ลอง paste URL แทน' });
-    return;
-  }
-
-  const info = await checker.validate(normalized).catch((err) => {
+  const info = await youtube.validate(parsed.channelIdOrHandle).catch((err) => {
     console.error('[streamalert validate]', err);
     return null;
   });
   if (!info) {
     await interaction.editReply({
-      content: '❌ หา creator นี้ไม่เจอ — ตรวจ URL / ID / permission อีกครั้ง',
+      content: '❌ หา YouTube channel นี้ไม่เจอ — ตรวจ URL/ID/handle อีกครั้ง',
     });
     return;
   }
@@ -95,8 +71,8 @@ async function subscribeExec(interaction: ChatInputCommandInteraction) {
   try {
     await StreamSubscription.create({
       guildId: interaction.guildId,
-      discordChannelId: channel.id,
-      platform,
+      discordChannelId: notifyChannel.id,
+      platform: 'youtube',
       creatorId: info.creatorId,
       creatorName: info.name,
     });
@@ -113,7 +89,7 @@ async function subscribeExec(interaction: ChatInputCommandInteraction) {
   }
 
   await interaction.editReply({
-    content: `✅ ติดตาม **${info.name}** (${platform}) แจ้งเตือนที่ <#${channel.id}>`,
+    content: `✅ ติดตาม **${info.name}** แจ้งเตือนที่ <#${notifyChannel.id}>`,
   });
 }
 
@@ -122,18 +98,15 @@ export const subscribeCommand: SlashCommand = { data: subscribeData, execute: su
 // ---------- /unsubscribe ----------
 const unsubscribeData = new SlashCommandBuilder()
   .setName('unsubscribe')
-  .setDescription('ลบการติดตาม creator')
+  .setDescription('ลบการติดตาม YouTube channel')
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
   .setDMPermission(false)
   .addStringOption((o) =>
     o
-      .setName('platform')
-      .setDescription('แพลตฟอร์ม')
+      .setName('channel')
+      .setDescription('URL หรือ Channel ID หรือ @handle')
       .setRequired(true)
-      .addChoices(...platformChoices),
-  )
-  .addStringOption((o) =>
-    o.setName('creator').setDescription('URL หรือชื่อ/ID').setRequired(true).setMaxLength(500),
+      .setMaxLength(500),
   );
 
 async function unsubscribeExec(interaction: ChatInputCommandInteraction) {
@@ -141,20 +114,24 @@ async function unsubscribeExec(interaction: ChatInputCommandInteraction) {
     await interaction.reply({ content: 'ใช้ได้เฉพาะในเซิร์ฟเวอร์', ephemeral: true });
     return;
   }
-  const platform = interaction.options.getString('platform', true) as StreamPlatform;
-  const creatorInput = interaction.options.getString('creator', true);
-
-  const normalized = platform === 'facebook' ? creatorInput.trim() : normalizeInput(platform, creatorInput);
-  if (!normalized) {
-    await interaction.reply({ content: '❌ อ่านค่า creator ไม่ออก', ephemeral: true });
+  const input = interaction.options.getString('channel', true);
+  const parsed = parseYouTubeInput(input);
+  if (!parsed) {
+    await interaction.reply({ content: '❌ อ่านค่า channel ไม่ออก', ephemeral: true });
     return;
   }
 
-  // Try exact match on creatorId first; fall back to case-insensitive
+  // Try to resolve to channel ID first for exact match
+  let normalized = parsed.channelIdOrHandle;
+  if (!/^UC[\w-]{22}$/.test(normalized)) {
+    const info = await youtube.validate(normalized).catch(() => null);
+    if (info) normalized = info.creatorId;
+  }
+
   const res = await StreamSubscription.deleteOne({
     guildId: interaction.guildId,
-    platform,
-    creatorId: { $regex: `^${escapeRegex(normalized)}$`, $options: 'i' },
+    platform: 'youtube',
+    creatorId: normalized,
   });
 
   if (!res.deletedCount) {
@@ -162,10 +139,6 @@ async function unsubscribeExec(interaction: ChatInputCommandInteraction) {
     return;
   }
   await interaction.reply({ content: '🗑️ ลบการติดตามแล้ว', ephemeral: true });
-}
-
-function escapeRegex(s: string) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 export const unsubscribeCommand: SlashCommand = {
@@ -176,7 +149,7 @@ export const unsubscribeCommand: SlashCommand = {
 // ---------- /list-subscriptions ----------
 const listData = new SlashCommandBuilder()
   .setName('list-subscriptions')
-  .setDescription('ดูรายการ creator ที่ติดตามอยู่ในเซิร์ฟนี้')
+  .setDescription('ดูรายการ YouTube channel ที่ติดตามอยู่ในเซิร์ฟนี้')
   .setDMPermission(false);
 
 async function listExec(interaction: ChatInputCommandInteraction) {
@@ -185,31 +158,22 @@ async function listExec(interaction: ChatInputCommandInteraction) {
     return;
   }
   const subs = await StreamSubscription.find({ guildId: interaction.guildId })
-    .sort({ platform: 1, creatorName: 1 })
+    .sort({ creatorName: 1 })
     .lean();
   if (subs.length === 0) {
     await interaction.reply({ content: 'ยังไม่มีการติดตามในเซิร์ฟนี้', ephemeral: true });
     return;
   }
 
-  const byPlatform = new Map<StreamPlatform, typeof subs>();
-  for (const s of subs) {
-    if (!byPlatform.has(s.platform)) byPlatform.set(s.platform, []);
-    byPlatform.get(s.platform)!.push(s);
-  }
-
   const embed = new EmbedBuilder()
-    .setTitle('🔔 Stream Subscriptions')
-    .setColor(0xe07820);
-  for (const [platform, list] of byPlatform) {
-    embed.addFields({
-      name: `${platform} (${list.length})`,
-      value: list
+    .setTitle('🔔 YouTube Subscriptions')
+    .setColor(0xff0000)
+    .setDescription(
+      subs
         .map((s) => `• **${s.creatorName || s.creatorId}** → <#${s.discordChannelId}>`)
         .join('\n')
-        .slice(0, 1024),
-    });
-  }
+        .slice(0, 4000),
+    );
 
   await interaction.reply({ embeds: [embed], ephemeral: true });
 }

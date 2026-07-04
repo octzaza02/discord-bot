@@ -3,30 +3,27 @@ import {
   StreamState,
   StreamSubscription,
   isFeatureEnabled,
-  type StreamPlatform,
 } from '@discord-bot/shared';
-import { getChecker } from './checkers/index.js';
+import { youtube } from './checkers/index.js';
 import { sendStreamNotification } from './notify.js';
-import type { StreamEvent } from './types.js';
 
-const CHECK_INTERVAL_MS = 2 * 60 * 1000; // 2 minutes
+const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const FAIL_LIMIT = 5;
-const FAIL_COOLDOWN_MS = 30 * 60 * 1000; // 30 min
+const FAIL_COOLDOWN_MS = 30 * 60 * 1000;
 
-type Key = `${StreamPlatform}:${string}`;
-
-async function processOne(
+async function processCreator(
   client: Client,
-  platform: StreamPlatform,
   creatorId: string,
-  subs: Array<{ _id: any; guildId: string; discordChannelId: string; lastVideoId: string | null; lastLiveId: string | null }>,
+  subs: Array<{
+    _id: any;
+    guildId: string;
+    discordChannelId: string;
+    lastVideoId: string | null;
+  }>,
 ) {
-  const checker = getChecker(platform);
-  if (!checker.isEnabled()) return;
-
   const state = await StreamState.findOneAndUpdate(
-    { platform, creatorId },
-    { $setOnInsert: { platform, creatorId } },
+    { platform: 'youtube', creatorId },
+    { $setOnInsert: { platform: 'youtube', creatorId } },
     { upsert: true, new: true, setDefaultsOnInsert: true },
   );
 
@@ -34,7 +31,7 @@ async function processOne(
 
   let result;
   try {
-    result = await checker.check(creatorId);
+    result = await youtube.check(creatorId);
     state.failCount = 0;
     state.cooldownUntil = null;
   } catch (err) {
@@ -43,7 +40,7 @@ async function processOne(
     if (state.failCount >= FAIL_LIMIT) {
       state.cooldownUntil = new Date(Date.now() + FAIL_COOLDOWN_MS);
       console.warn(
-        `[streamalert] ${platform}:${creatorId} failed ${state.failCount}x, cooldown 30m`,
+        `[streamalert] youtube:${creatorId} failed ${state.failCount}x, cooldown 30m`,
         err instanceof Error ? err.message : err,
       );
     }
@@ -52,46 +49,28 @@ async function processOne(
   }
 
   state.checkedAt = new Date();
-  const prevLiveId = state.liveId;
   const prevVideoId = state.latestVideoId;
-  state.liveId = result.liveId;
   if (result.latestVideoId) state.latestVideoId = result.latestVideoId;
   await state.save();
 
-  // Determine which events are actually new
-  const newEvents: StreamEvent[] = [];
-  for (const ev of result.events) {
-    if (ev.kind === 'live') {
-      if (prevLiveId !== ev.id) newEvents.push(ev);
-    } else if (ev.kind === 'video') {
-      if (prevVideoId !== ev.id) newEvents.push(ev);
-    }
-  }
+  const newEvents = result.events.filter((ev) => ev.id !== prevVideoId);
   if (newEvents.length === 0) return;
 
   for (const sub of subs) {
     for (const ev of newEvents) {
-      // Per-subscription dedupe: skip if this exact ID was already notified for this sub
-      if (ev.kind === 'live' && sub.lastLiveId === ev.id) continue;
-      if (ev.kind === 'video' && sub.lastVideoId === ev.id) continue;
-
-      // Feature toggle check per guild
+      if (sub.lastVideoId === ev.id) continue;
       const enabled = await isFeatureEnabled(sub.guildId, 'streamalert');
       if (!enabled) continue;
-
       await sendStreamNotification(
         client,
         sub.guildId,
         sub.discordChannelId,
-        platform,
         ev,
       ).catch((err) => console.error('[streamalert] notify failed', err));
-
-      // Mark as notified for this sub
-      const update: any = {};
-      if (ev.kind === 'live') update.lastLiveId = ev.id;
-      if (ev.kind === 'video') update.lastVideoId = ev.id;
-      await StreamSubscription.updateOne({ _id: sub._id }, { $set: update });
+      await StreamSubscription.updateOne(
+        { _id: sub._id },
+        { $set: { lastVideoId: ev.id } },
+      );
     }
   }
 }
@@ -100,26 +79,24 @@ async function tick(client: Client) {
   const subs = await StreamSubscription.find({}).lean();
   if (subs.length === 0) return;
 
-  // Group by (platform, creatorId) — one API call serves all guilds
-  const groups = new Map<Key, typeof subs>();
+  // Group by creatorId — one API call serves all guilds
+  const groups = new Map<string, typeof subs>();
   for (const s of subs) {
-    const key = `${s.platform}:${s.creatorId}` as Key;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)!.push(s);
+    if (!groups.has(s.creatorId)) groups.set(s.creatorId, []);
+    groups.get(s.creatorId)!.push(s);
   }
 
-  for (const [key, group] of groups) {
-    const [platform, creatorId] = key.split(':') as [StreamPlatform, string];
+  for (const [creatorId, group] of groups) {
     try {
-      await processOne(client, platform, creatorId.slice(0), group as any);
+      await processCreator(client, creatorId, group as any);
     } catch (err) {
-      console.error(`[streamalert] group ${key} failed`, err);
+      console.error(`[streamalert] group youtube:${creatorId} failed`, err);
     }
   }
 }
 
 export function startStreamScheduler(client: Client) {
-  console.log('[streamalert] scheduler started (2min interval)');
+  console.log('[streamalert] scheduler started (5min interval, YouTube RSS)');
   tick(client).catch((err) => console.error('[streamalert] initial tick failed', err));
   setInterval(() => {
     tick(client).catch((err) => console.error('[streamalert] tick failed', err));
