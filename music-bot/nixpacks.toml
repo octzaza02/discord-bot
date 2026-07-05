@@ -1,0 +1,7 @@
+# Railway/Nixpacks: Python provider auto-detect จาก requirements.txt
+# ต้องลง ffmpeg เพิ่มเอง (ไม่มี default) — bot เรียก ffmpeg ตอนเล่นเสียง
+[phases.setup]
+aptPkgs = ["ffmpeg"]
+
+[start]
+cmd = "python bot.py"

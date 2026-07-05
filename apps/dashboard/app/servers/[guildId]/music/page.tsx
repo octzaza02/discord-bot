@@ -1,4 +1,5 @@
 import { HowToUse, Step, Kbd } from '../../../../components/HowToUse';
+import { MusicControls } from './MusicControls';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +14,7 @@ const COMMANDS: Array<{ cmd: string; desc: string }> = [
   { cmd: '/loop', desc: 'สลับโหมด: off → single (เพลงเดียว) → queue (ทั้งคิว)' },
 ];
 
-export default function MusicPage() {
+export default function MusicPage({ params }: { params: { guildId: string } }) {
   return (
     <div>
       <h1 className="text-2xl font-semibold mb-2 text-amber-heading">🎵 Music bot</h1>
@@ -21,9 +22,12 @@ export default function MusicPage() {
         เล่นเพลงจาก YouTube/SoundCloud ในช่อง voice รองรับคิวและ loop
       </p>
 
+      <MusicControls guildId={params.guildId} />
+
       <div className="rounded-lg border border-amber-primary/40 bg-amber-primary/10 p-4 mb-6 text-sm text-amber-heading">
         <b>หมายเหตุ:</b> Music bot เป็นบอทแยกต่างหาก (Python + discord.py) รันเอง (self-hosted)
-        ไม่ได้รวมกับบอทหลักตัวนี้ — จึงไม่มีปุ่มเปิด/ปิดที่ dashboard หน้านี้เป็นคู่มือคำสั่งเท่านั้น
+        — ปุ่มควบคุมด้านบนสั่งได้เมื่อบอทออนไลน์ ส่วนการเริ่มเล่น (<Kbd>/play</Kbd>)
+        ต้องทำใน Discord ก่อนเพราะต้องรู้ว่าคุณอยู่ห้อง voice ไหน
       </div>
 
       <HowToUse title="วิธีใช้" defaultOpen>
