@@ -1,0 +1,14 @@
+# ลด build context + กันไฟล์ mode แปลก (venv symlinks) ทำ tar พัง
+**/node_modules
+**/dist
+**/.next
+.git
+*.log
+
+# Python music bot (แยกโปรเจกต์ ไม่เกี่ยวกับ build บอทหลัก)
+music-bot
+
+# env / local
+**/.env
+**/.venv
+.fly

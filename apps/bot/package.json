@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@discord-bot/shared": "workspace:*",
-    "@discordjs/voice": "0.18.0",
+    "@discordjs/voice": "0.19.2",
     "discord.js": "^14.16.2",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",

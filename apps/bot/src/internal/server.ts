@@ -17,6 +17,7 @@ export function startInternalApi(client: Client) {
   const app = Fastify({ logger: false });
 
   app.addHook('onRequest', async (req, reply) => {
+    if (req.url === '/health') return; // ให้ Fly/health-check เรียกได้โดยไม่ต้อง auth
     const auth = req.headers['authorization'];
     if (!config.internalSecret || auth !== `Bearer ${config.internalSecret}`) {
       reply.code(401).send({ error: 'unauthorized' });
