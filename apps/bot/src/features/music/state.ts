@@ -66,6 +66,11 @@ export function getState(guildId: string): GuildMusicState {
       console.error(`[music] player error guild=${guildId}:`, err.message);
       void playNext(guildId);
     });
+    if (process.env.DEBUG_VOICE) {
+      player.on('stateChange', (o, n) =>
+        console.log(`[player] ${o.status} -> ${n.status}`),
+      );
+    }
     states.set(guildId, state);
   }
   return state;
@@ -152,6 +157,7 @@ export async function connectToChannel(
     channelId: voiceChannelId,
     guildId: guild.id,
     adapterCreator: guild.voiceAdapterCreator,
+    debug: Boolean(process.env.DEBUG_VOICE),
   });
 
   if (process.env.DEBUG_VOICE) {
@@ -212,19 +218,30 @@ export async function playNext(guildId: string): Promise<void> {
   }
 
   // yt-dlp ดึง bestaudio → ffmpeg แปลงเป็น ogg/opus → discord เล่นตรง (ไม่ต้อง opus encoder)
+  const debugVoice = Boolean(process.env.DEBUG_VOICE);
   const ytdlp = spawn(
     YTDLP_PATH,
     ['-f', 'bestaudio/best', '-o', '-', '--quiet', '--no-warnings', song.url],
-    { stdio: ['ignore', 'pipe', 'ignore'] },
+    { stdio: ['ignore', 'pipe', 'pipe'] },
   );
   const ffmpeg = spawn(
     FFMPEG_PATH,
-    ['-i', 'pipe:0', '-vn', '-c:a', 'libopus', '-b:a', '128k', '-f', 'ogg', 'pipe:1'],
-    { stdio: ['pipe', 'pipe', 'ignore'] },
+    ['-nostats', '-loglevel', 'warning', '-i', 'pipe:0', '-vn', '-c:a', 'libopus', '-b:a', '128k', '-f', 'ogg', 'pipe:1'],
+    { stdio: ['pipe', 'pipe', 'pipe'] },
   );
   state.procs.push(ytdlp, ffmpeg);
   ytdlp.on('error', (e) => console.error(`[music] yt-dlp spawn guild=${guildId}:`, e.message));
   ffmpeg.on('error', (e) => console.error(`[music] ffmpeg spawn guild=${guildId}:`, e.message));
+  if (debugVoice) {
+    ytdlp.stderr.on('data', (d) => console.log('[yt-dlp err]', String(d).trim()));
+    ffmpeg.stderr.on('data', (d) => console.log('[ffmpeg err]', String(d).trim()));
+    ytdlp.on('close', (code) => console.log(`[yt-dlp] exit code=${code}`));
+    ffmpeg.on('close', (code) => console.log(`[ffmpeg] exit code=${code}`));
+  } else {
+    // ต้องมีคน consume stderr ไม่งั้น buffer เต็มแล้ว process ค้าง
+    ytdlp.stderr.resume();
+    ffmpeg.stderr.resume();
+  }
   ytdlp.stdout.pipe(ffmpeg.stdin);
   // กัน EPIPE ตอน ffmpeg ปิดก่อน yt-dlp
   ytdlp.stdout.on('error', () => {});
