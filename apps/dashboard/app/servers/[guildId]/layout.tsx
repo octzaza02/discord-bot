@@ -77,6 +77,7 @@ export default async function GuildLayout({
         <NavLink href={`/servers/${params.guildId}/leveling`}>⭐ Leveling</NavLink>
         <NavLink href={`/servers/${params.guildId}/polls`}>📊 Polls</NavLink>
         <NavLink href={`/servers/${params.guildId}/streamalerts`}>🔔 YouTube Alerts</NavLink>
+        <NavLink href={`/servers/${params.guildId}/music`}>🎵 Music bot</NavLink>
       </aside>
       <section>{children}</section>
     </div>
