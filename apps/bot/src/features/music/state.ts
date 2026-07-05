@@ -154,6 +154,14 @@ export async function connectToChannel(
     adapterCreator: guild.voiceAdapterCreator,
   });
 
+  if (process.env.DEBUG_VOICE) {
+    connection.on('stateChange', (o, n) =>
+      console.log(`[voice] ${o.status} -> ${n.status}`),
+    );
+    connection.on('error', (e) => console.error('[voice] error:', e.message));
+    connection.on('debug', (m) => console.log('[voice debug]', m));
+  }
+
   try {
     await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
   } catch {
