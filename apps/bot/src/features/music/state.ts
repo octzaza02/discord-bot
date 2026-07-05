@@ -11,22 +11,10 @@ import {
   type AudioPlayer,
   type VoiceConnection,
 } from '@discordjs/voice';
-import YouTubeModule from 'youtube-sr';
 import type { Guild, GuildTextBasedChannel } from 'discord.js';
 
-// youtube-sr เสถียรสำหรับ search (pure JS) — pure-JS stream libs (play-dl/ytdl-core)
-// พังกับ YouTube ปัจจุบัน จึงใช้ yt-dlp binary ดึงเสียงแทน
-interface YtVideo {
-  id?: string;
-  title?: string;
-  duration?: number; // มิลลิวินาที
-}
-interface YtApi {
-  searchOne(query: string, type: 'video'): Promise<YtVideo | null>;
-  getVideo(url: string): Promise<YtVideo | null>;
-}
-const YouTube = ((YouTubeModule as unknown as { default?: unknown }).default ??
-  YouTubeModule) as unknown as YtApi;
+// ใช้ yt-dlp ทำทั้ง metadata + stream — pure-JS libs (play-dl/ytdl-core/youtube-sr)
+// พังกับ YouTube ปัจจุบัน โดยเฉพาะจาก datacenter IP (consent-wall/decipher)
 
 // binary paths — Railway (Docker alpine) มี yt-dlp/ffmpeg บน PATH จาก apk
 // local dev ตั้ง env override ได้
@@ -91,24 +79,64 @@ function isYouTubeUrl(input: string): boolean {
   return /^https?:\/\/(www\.|music\.|m\.)?(youtube\.com|youtu\.be)\//.test(input);
 }
 
+interface YtdlpEntry {
+  id?: string;
+  title?: string;
+  duration?: number; // วินาที
+  webpage_url?: string;
+  url?: string;
+  entries?: YtdlpEntry[];
+}
+
+function runYtdlpJson(arg: string, extraArgs: string[]): Promise<YtdlpEntry> {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(
+      YTDLP_PATH,
+      [arg, '--dump-single-json', '--flat-playlist', '--no-warnings', ...extraArgs],
+      { stdio: ['ignore', 'pipe', 'ignore'] },
+    );
+    let out = '';
+    const timer = setTimeout(() => {
+      proc.kill('SIGKILL');
+      reject(new Error('yt-dlp timeout'));
+    }, 20_000);
+    proc.stdout.on('data', (d) => (out += d));
+    proc.on('error', (e) => {
+      clearTimeout(timer);
+      reject(e);
+    });
+    proc.on('close', (code) => {
+      clearTimeout(timer);
+      if (code !== 0 || !out.trim()) return reject(new Error('yt-dlp failed'));
+      try {
+        resolve(JSON.parse(out) as YtdlpEntry);
+      } catch (e) {
+        reject(e as Error);
+      }
+    });
+  });
+}
+
 export async function resolveSong(query: string, requester: string): Promise<Song> {
   const input = query.trim();
-  if (isYouTubeUrl(input)) {
-    const video = await YouTube.getVideo(input).catch(() => null);
-    if (!video || !video.id) throw new Error('เปิดวิดีโอนี้ไม่ได้');
-    return {
-      title: video.title ?? 'Unknown',
-      url: `https://www.youtube.com/watch?v=${video.id}`,
-      duration: Math.floor((video.duration ?? 0) / 1000),
-      requester,
-    };
+  const isUrl = isYouTubeUrl(input);
+  const arg = isUrl ? input : `ytsearch1:${input}`;
+  const extra = isUrl ? ['--no-playlist'] : [];
+
+  let json: YtdlpEntry;
+  try {
+    json = await runYtdlpJson(arg, extra);
+  } catch (err) {
+    console.error('[music] resolve failed:', (err as Error).message);
+    throw new Error(isUrl ? 'เปิดวิดีโอนี้ไม่ได้' : 'ไม่พบเพลงจากคำค้นนี้');
   }
-  const video = await YouTube.searchOne(input, 'video').catch(() => null);
-  if (!video || !video.id) throw new Error('ไม่พบเพลงจากคำค้นนี้');
+
+  const v = json.entries ? json.entries[0] : json;
+  if (!v || !v.id) throw new Error('ไม่พบเพลงจากคำค้นนี้');
   return {
-    title: video.title ?? 'Unknown',
-    url: `https://www.youtube.com/watch?v=${video.id}`,
-    duration: Math.floor((video.duration ?? 0) / 1000),
+    title: v.title ?? 'Unknown',
+    url: v.webpage_url ?? v.url ?? `https://www.youtube.com/watch?v=${v.id}`,
+    duration: Math.floor(v.duration ?? 0),
     requester,
   };
 }
