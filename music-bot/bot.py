@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 from collections import deque
 from dataclasses import dataclass, field
@@ -14,6 +15,12 @@ from internal_api import start_internal_api
 
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
+
+# ตั้ง DEBUG_VOICE=1 เพื่อดู log handshake voice (ใช้ debug ตอน /play ค้าง)
+if os.getenv("DEBUG_VOICE"):
+    logging.basicConfig(level=logging.INFO)
+    logging.getLogger("discord.voice_client").setLevel(logging.DEBUG)
+    logging.getLogger("discord.gateway").setLevel(logging.DEBUG)
 
 # yt-dlp: noplaylist=True กัน user โยน URL playlist แล้ว bot โหลดยาว
 # default_search=ytsearch ทำให้ใส่ "ชื่อเพลง" เฉยๆ ก็หาให้จาก YouTube
@@ -32,6 +39,10 @@ FFMPEG_OPTS = {
     "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
     "options": "-vn",
 }
+
+# ตั้ง FFMPEG_PATH ถ้า ffmpeg ไม่อยู่ใน PATH (Windows ที่เพิ่งลง / path เฉพาะ)
+# default "ffmpeg" = หาใน PATH (บน Railway/Linux ที่ nixpacks ลงให้)
+FFMPEG_EXECUTABLE = os.getenv("FFMPEG_PATH", "ffmpeg")
 
 ytdl = yt_dlp.YoutubeDL(YTDL_OPTS)
 
@@ -133,7 +144,9 @@ async def play_next(guild_id: int) -> None:
         song = state.queue.popleft()
         state.current = song
 
-    source = discord.FFmpegPCMAudio(song.stream_url, **FFMPEG_OPTS)
+    source = discord.FFmpegPCMAudio(
+        song.stream_url, executable=FFMPEG_EXECUTABLE, **FFMPEG_OPTS
+    )
     state.voice.play(source, after=lambda e: _after_playback(guild_id, e))
     if state.text_channel:
         try:
@@ -164,7 +177,14 @@ async def ensure_voice(interaction: discord.Interaction) -> Optional[discord.Voi
             return None
         return state.voice
 
-    voice = await user_channel.connect()
+    try:
+        voice = await user_channel.connect(timeout=30.0, reconnect=True)
+    except Exception as e:
+        # connect ล้มบ่อยจาก UDP ถูกบล็อก / bot ไม่มีสิทธิ์เข้า channel / voice region ล่ม
+        await interaction.followup.send(
+            f"❌ เข้า voice channel ไม่ได้: {e}", ephemeral=True
+        )
+        return None
     state.voice = voice
     return voice
 
@@ -309,6 +329,24 @@ async def loop_cmd(interaction: discord.Interaction):
         "queue": "🔁 loop ทั้งคิว",
     }
     await interaction.response.send_message(labels[state.loop_mode])
+
+
+# ---------- error handler ----------
+@bot.tree.error
+async def on_app_command_error(
+    interaction: discord.Interaction, error: app_commands.AppCommandError
+):
+    # กันอาการ "thinking..." ค้าง — ถ้า command raise หลัง defer() discord.py
+    # จะไม่ตอบอัตโนมัติ ต้องตอบเองที่นี่ให้ผู้ใช้เห็น error
+    print(f"[app command error] {interaction.command and interaction.command.name}: {error!r}")
+    msg = f"❌ เกิดข้อผิดพลาด: {error}"
+    try:
+        if interaction.response.is_done():
+            await interaction.followup.send(msg, ephemeral=True)
+        else:
+            await interaction.response.send_message(msg, ephemeral=True)
+    except discord.HTTPException:
+        pass
 
 
 # ---------- events ----------

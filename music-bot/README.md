@@ -38,6 +38,19 @@ Loop modes:
 winget install ffmpeg
 ```
 
+> **สำคัญหลังลง winget:** ต้อง**เปิด terminal ใหม่**ให้ PATH อัพเดต ไม่งั้น bot จะขึ้น
+> `ffmpeg was not found` ถ้ายังไม่อยากเปิดใหม่ ตั้ง env `FFMPEG_PATH` ชี้ไปที่ `ffmpeg.exe` ตรง ๆ:
+> ```powershell
+> $env:FFMPEG_PATH = "C:\path\to\ffmpeg.exe"
+> ```
+
+## Troubleshooting
+
+- **`/play` ค้างที่ "thinking..." / `davey library needed`** — discord.py 2.6+ ต้องมี `davey`
+  (DAVE E2EE voice) ให้ลง `discord.py[voice]` (มีใน requirements.txt แล้ว) ไม่ใช่ `discord.py` เปล่า
+- **`ffmpeg was not found`** — ffmpeg ไม่อยู่ใน PATH → เปิด terminal ใหม่ หรือตั้ง `FFMPEG_PATH`
+- **`PyNaCl` เวอร์ชันชน** — `discord.py[voice]` บังคับ `PyNaCl<1.6` อย่าลง PyNaCl แยกเวอร์ชันใหม่กว่า
+
 ### macOS
 ```bash
 brew install ffmpeg
