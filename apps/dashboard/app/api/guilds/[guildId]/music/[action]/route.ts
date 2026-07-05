@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { authorizeGuild } from '../../../../../../lib/authorize';
-import { callMusic, MusicBotNotConfigured } from '../../../../../../lib/musicClient';
+import { callBot } from '../../../../../../lib/botClient';
 
 const ALLOWED = new Set(['skip', 'pause', 'resume', 'stop', 'loop', 'play']);
 
@@ -20,14 +20,12 @@ export async function POST(
   }
 
   try {
-    const data = await callMusic(
+    const data = await callBot(
       `/guilds/${params.guildId}/music/${params.action}`,
       { method: 'POST', body },
     );
     return NextResponse.json(data);
   } catch (e) {
-    if (e instanceof MusicBotNotConfigured)
-      return NextResponse.json({ error: 'not_configured' }, { status: 503 });
     return NextResponse.json(
       { error: e instanceof Error ? e.message : 'unreachable' },
       { status: 502 },

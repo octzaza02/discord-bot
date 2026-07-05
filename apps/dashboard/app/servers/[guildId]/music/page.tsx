@@ -25,9 +25,9 @@ export default function MusicPage({ params }: { params: { guildId: string } }) {
       <MusicControls guildId={params.guildId} />
 
       <div className="rounded-lg border border-amber-primary/40 bg-amber-primary/10 p-4 mb-6 text-sm text-amber-heading">
-        <b>หมายเหตุ:</b> Music bot เป็นบอทแยกต่างหาก (Python + discord.py) รันเอง (self-hosted)
-        — ปุ่มควบคุมด้านบนสั่งได้เมื่อบอทออนไลน์ ส่วนการเริ่มเล่น (<Kbd>/play</Kbd>)
-        ต้องทำใน Discord ก่อนเพราะต้องรู้ว่าคุณอยู่ห้อง voice ไหน
+        <b>หมายเหตุ:</b> การเริ่มเล่น (<Kbd>/play</Kbd>) ต้องทำใน Discord ก่อน
+        เพราะต้องรู้ว่าคุณอยู่ห้อง voice ไหน — หลังจากนั้นควบคุม (ข้าม/หยุด/คิว/ใส่เพลง)
+        จากปุ่มด้านบนได้เลย
       </div>
 
       <HowToUse title="วิธีใช้" defaultOpen>

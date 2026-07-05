@@ -17,6 +17,8 @@ RUN pnpm --filter bot build
 
 FROM node:20-alpine AS runtime
 RUN corepack enable
+# ffmpeg + yt-dlp สำหรับ music feature (spawn เป็น binary) — yt-dlp เสถียรกว่า pure-JS libs
+RUN apk add --no-cache ffmpeg yt-dlp
 WORKDIR /repo
 ENV NODE_ENV=production
 COPY --from=build /repo/package.json /repo/pnpm-workspace.yaml ./

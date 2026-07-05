@@ -8,6 +8,7 @@ type Features = {
   leveling: boolean;
   poll: boolean;
   streamalert: boolean;
+  music: boolean;
   dashboardDm: boolean;
 };
 
@@ -52,6 +53,13 @@ const CARDS: Array<{
     title: 'YouTube Alerts',
     description: 'แจ้งเตือนคลิป/ไลฟ์ใหม่จาก YouTube channel',
     href: 'streamalerts',
+  },
+  {
+    key: 'music',
+    icon: '🎵',
+    title: 'Music',
+    description: 'เล่นเพลง YouTube ในช่อง voice + คิว + loop',
+    href: 'music',
   },
   {
     key: 'dashboardDm',

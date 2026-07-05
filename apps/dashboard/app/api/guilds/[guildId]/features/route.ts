@@ -9,6 +9,7 @@ const VALID_FEATURES = [
   'leveling',
   'poll',
   'streamalert',
+  'music',
   'dashboardDm',
 ] as const;
 type FeatureName = (typeof VALID_FEATURES)[number];

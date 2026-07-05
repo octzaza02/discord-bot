@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { authorizeGuild } from '../../../../../lib/authorize';
-import { callMusic, MusicBotNotConfigured } from '../../../../../lib/musicClient';
+import { callBot } from '../../../../../lib/botClient';
 
 export async function GET(
   _req: Request,
@@ -9,11 +9,9 @@ export async function GET(
   if (!(await authorizeGuild(params.guildId)))
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   try {
-    const data = await callMusic(`/guilds/${params.guildId}/music`);
+    const data = await callBot(`/guilds/${params.guildId}/music`);
     return NextResponse.json(data);
-  } catch (e) {
-    if (e instanceof MusicBotNotConfigured)
-      return NextResponse.json({ error: 'not_configured' }, { status: 503 });
+  } catch {
     return NextResponse.json({ error: 'unreachable' }, { status: 502 });
   }
 }

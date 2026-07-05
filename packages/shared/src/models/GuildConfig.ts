@@ -25,6 +25,7 @@ const FeaturesSchema = new Schema(
     leveling: { type: FeatureFlagSchema, default: () => ({ enabled: false }) },
     poll: { type: FeatureFlagSchema, default: () => ({ enabled: true }) },
     streamalert: { type: FeatureFlagSchema, default: () => ({ enabled: false }) },
+    music: { type: FeatureFlagSchema, default: () => ({ enabled: true }) },
     dashboardDm: { type: FeatureFlagSchema, default: () => ({ enabled: true }) },
   },
   { _id: false },
@@ -112,6 +113,7 @@ export interface FeaturesConfig {
   leveling: { enabled: boolean };
   poll: { enabled: boolean };
   streamalert: { enabled: boolean };
+  music: { enabled: boolean };
   dashboardDm: { enabled: boolean };
 }
 
@@ -142,6 +144,7 @@ export type FeatureName =
   | 'leveling'
   | 'poll'
   | 'streamalert'
+  | 'music'
   | 'dashboardDm';
 
 export async function isFeatureEnabled(guildId: string, feature: FeatureName): Promise<boolean> {
