@@ -1,5 +1,0 @@
-# [voice] extra ดึง PyNaCl + davey (DAVE E2EE voice) — discord.py 2.6+ ต้องมี davey ไม่งั้น voice ใช้ไม่ได้
-discord.py[voice]>=2.7.0
-yt-dlp>=2024.3.10
-python-dotenv>=1.0.0
-aiohttp>=3.9.0

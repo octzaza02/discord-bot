@@ -1,4 +1,7 @@
 import { spawn, type ChildProcess } from 'node:child_process';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import {
   AudioPlayerStatus,
   createAudioPlayer,
@@ -20,6 +23,28 @@ import type { Guild, GuildTextBasedChannel } from 'discord.js';
 // local dev ตั้ง env override ได้
 const YTDLP_PATH = process.env.YTDLP_PATH || 'yt-dlp';
 const FFMPEG_PATH = process.env.FFMPEG_PATH || 'ffmpeg';
+
+// cookies สำหรับ yt-dlp — แก้ "Sign in to confirm you're not a bot" จาก datacenter IP
+// YTDLP_COOKIES_B64: cookies.txt (Netscape format) เข้ารหัส base64 ไว้ใน secret (multi-line ผ่าน env ตรงๆ ไม่ได้)
+// YTDLP_COOKIES_FILE: path ไฟล์ต้นฉบับตรงๆ (local dev)
+// yt-dlp เขียนคุกกี้กลับเข้าไฟล์ที่ส่งให้ทุกครั้งที่รัน (คล้าย cookie jar ของเบราว์เซอร์) —
+// ถ้าให้ไฟล์เดิมซ้ำๆ คุกกี้จะค่อยๆ เสื่อม/หายไปจากการเขียนทับสะสม จึงต้อง copy จากต้นฉบับ (pristine) ใหม่ทุกครั้งก่อนเรียก
+function loadPristineCookies(): Buffer | null {
+  if (process.env.YTDLP_COOKIES_FILE) return readFileSync(process.env.YTDLP_COOKIES_FILE);
+  const b64 = process.env.YTDLP_COOKIES_B64;
+  return b64 ? Buffer.from(b64, 'base64') : null;
+}
+
+const PRISTINE_COOKIES = loadPristineCookies();
+const COOKIES_WORK_FILE = PRISTINE_COOKIES
+  ? join(mkdtempSync(join(tmpdir(), 'yt-cookies-')), 'cookies.txt')
+  : null;
+
+function cookiesArgs(): string[] {
+  if (!PRISTINE_COOKIES || !COOKIES_WORK_FILE) return [];
+  writeFileSync(COOKIES_WORK_FILE, PRISTINE_COOKIES);
+  return ['--cookies', COOKIES_WORK_FILE];
+}
 
 export type LoopMode = 'off' | 'single' | 'queue';
 
@@ -66,11 +91,6 @@ export function getState(guildId: string): GuildMusicState {
       console.error(`[music] player error guild=${guildId}:`, err.message);
       void playNext(guildId);
     });
-    if (process.env.DEBUG_VOICE) {
-      player.on('stateChange', (o, n) =>
-        console.log(`[player] ${o.status} -> ${n.status}`),
-      );
-    }
     states.set(guildId, state);
   }
   return state;
@@ -97,22 +117,27 @@ function runYtdlpJson(arg: string, extraArgs: string[]): Promise<YtdlpEntry> {
   return new Promise((resolve, reject) => {
     const proc = spawn(
       YTDLP_PATH,
-      [arg, '--dump-single-json', '--flat-playlist', '--no-warnings', ...extraArgs],
-      { stdio: ['ignore', 'pipe', 'ignore'] },
+      [arg, '--dump-single-json', '--flat-playlist', '--no-warnings', ...cookiesArgs(), ...extraArgs],
+      { stdio: ['ignore', 'pipe', 'pipe'] },
     );
     let out = '';
+    let errOut = '';
     const timer = setTimeout(() => {
       proc.kill('SIGKILL');
       reject(new Error('yt-dlp timeout'));
     }, 20_000);
     proc.stdout.on('data', (d) => (out += d));
+    proc.stderr.on('data', (d) => (errOut += d));
     proc.on('error', (e) => {
       clearTimeout(timer);
       reject(e);
     });
     proc.on('close', (code) => {
       clearTimeout(timer);
-      if (code !== 0 || !out.trim()) return reject(new Error('yt-dlp failed'));
+      if (code !== 0 || !out.trim()) {
+        if (errOut.trim()) console.error('[music] yt-dlp resolve stderr:', errOut.trim().slice(0, 500));
+        return reject(new Error('yt-dlp failed'));
+      }
       try {
         resolve(JSON.parse(out) as YtdlpEntry);
       } catch (e) {
@@ -157,16 +182,9 @@ export async function connectToChannel(
     channelId: voiceChannelId,
     guildId: guild.id,
     adapterCreator: guild.voiceAdapterCreator,
-    debug: Boolean(process.env.DEBUG_VOICE),
   });
 
-  if (process.env.DEBUG_VOICE) {
-    connection.on('stateChange', (o, n) =>
-      console.log(`[voice] ${o.status} -> ${n.status}`),
-    );
-    connection.on('error', (e) => console.error('[voice] error:', e.message));
-    connection.on('debug', (m) => console.log('[voice debug]', m));
-  }
+  connection.on('error', (e) => console.error('[voice] error:', e.message));
 
   try {
     await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
@@ -218,10 +236,9 @@ export async function playNext(guildId: string): Promise<void> {
   }
 
   // yt-dlp ดึง bestaudio → ffmpeg แปลงเป็น ogg/opus → discord เล่นตรง (ไม่ต้อง opus encoder)
-  const debugVoice = Boolean(process.env.DEBUG_VOICE);
   const ytdlp = spawn(
     YTDLP_PATH,
-    ['-f', 'bestaudio/best', '-o', '-', '--quiet', '--no-warnings', song.url],
+    ['-f', 'bestaudio/best', '-o', '-', '--quiet', '--no-warnings', ...cookiesArgs(), song.url],
     { stdio: ['ignore', 'pipe', 'pipe'] },
   );
   const ffmpeg = spawn(
@@ -232,16 +249,14 @@ export async function playNext(guildId: string): Promise<void> {
   state.procs.push(ytdlp, ffmpeg);
   ytdlp.on('error', (e) => console.error(`[music] yt-dlp spawn guild=${guildId}:`, e.message));
   ffmpeg.on('error', (e) => console.error(`[music] ffmpeg spawn guild=${guildId}:`, e.message));
-  if (debugVoice) {
-    ytdlp.stderr.on('data', (d) => console.log('[yt-dlp err]', String(d).trim()));
-    ffmpeg.stderr.on('data', (d) => console.log('[ffmpeg err]', String(d).trim()));
-    ytdlp.on('close', (code) => console.log(`[yt-dlp] exit code=${code}`));
-    ffmpeg.on('close', (code) => console.log(`[ffmpeg] exit code=${code}`));
-  } else {
-    // ต้องมีคน consume stderr ไม่งั้น buffer เต็มแล้ว process ค้าง
-    ytdlp.stderr.resume();
-    ffmpeg.stderr.resume();
-  }
+  let ytdlpErr = '';
+  ytdlp.stderr.on('data', (d) => (ytdlpErr += d));
+  ytdlp.on('close', (code) => {
+    if (code !== 0 && ytdlpErr.trim()) {
+      console.error(`[music] yt-dlp stream stderr guild=${guildId}:`, ytdlpErr.trim().slice(0, 500));
+    }
+  });
+  ffmpeg.stderr.on('data', (d) => console.error(`[music] ffmpeg stderr guild=${guildId}:`, String(d).trim().slice(0, 300)));
   ytdlp.stdout.pipe(ffmpeg.stdin);
   // กัน EPIPE ตอน ffmpeg ปิดก่อน yt-dlp
   ytdlp.stdout.on('error', () => {});
