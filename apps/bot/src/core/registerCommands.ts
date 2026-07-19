@@ -1,4 +1,4 @@
-import { REST, Routes } from 'discord.js';
+import { ApplicationIntegrationType, REST, Routes } from 'discord.js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config } from '../config.js';
@@ -9,7 +9,14 @@ const featuresDir = path.resolve(__dirname, '../features');
 
 async function main() {
   const features = await loadFeatures(featuresDir);
-  const body = features.flatMap((f) => (f.commands ?? []).map((c) => c.data.toJSON()));
+  // ทุกคำสั่งผูกกับเซิร์ฟเวอร์ (voice, config ราย guild, ยศ) — ติดตั้งกับบัญชีผู้ใช้แล้วใช้จริงไม่ได้
+  // ต้องระบุตรงๆ ตอน register: Discord ไม่ลดค่านี้ให้เองแม้ปิด user install ที่ระดับแอปแล้ว ค่าเดิมจะค้าง
+  const body = features.flatMap((f) =>
+    (f.commands ?? []).map((c) => ({
+      ...c.data.toJSON(),
+      integration_types: [ApplicationIntegrationType.GuildInstall],
+    })),
+  );
   const rest = new REST({ version: '10' }).setToken(config.token);
 
   const guildId = process.env.GUILD_ID?.trim();
