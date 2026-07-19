@@ -9,6 +9,8 @@ primary_region = "sin"
 [env]
   NODE_ENV = "production"
   BOT_INTERNAL_PORT = "3001"
+  # URL สาธารณะ ไม่ใช่ secret — เก็บใน config ที่ track ใน git เพื่อไม่ให้หลุดตอน migrate host
+  DASHBOARD_URL = "https://dashboard-production-2783b.up.railway.app"
 
 # internal API (Fastify :3001) — dashboard บน Railway เรียกผ่าน public URL + Bearer auth
 [http_service]
